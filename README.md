@@ -24,7 +24,7 @@ A multi-capability Telegram bot that provides chat, web search, deep search with
 1. **Chat** — Multi-turn conversation with context history (last 12 turns), persisted across restarts.
 2. **Shallow Search** (`/search`) — Quick DuckDuckGo results in a numbered list.
 3. **Deep Search** (`/deep`) — Fetch top 4 results, extract content, synthesize an answer with citations.
-4. **Image Generation** (`/image`) — Generate images via Gemini / Pollinations.ai. Image generation uses free-tier providers; availability depends on provider quotas. As a next step, a paid provider (Replicate, Together.ai) would ensure reliable generation.
+4. **Image Generation** (`/image`) — Provider-swappable interface (`ImageGenerator` ABC) currently backed by Gemini 2.5 Flash with Pollinations.ai as fallback. Both are free-tier and currently unavailable due to quota limits and IP restrictions. Switching to a paid provider (Replicate, Together.ai) would resolve this without code changes.
 5. **Rate Limiting** — 3 requests per 60s on expensive ops (deep search, image generation).
 6. **Security** — SSRF guards, prompt-injection defense via source wrapping, MarkdownV2 escaping, input sanitization.
 
