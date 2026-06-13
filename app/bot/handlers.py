@@ -6,8 +6,10 @@ from telegram.ext import ContextTypes
 from app.services.chat import ChatService
 from app.services import search as search_service
 from app.services import deep_search as deep_search_service
+from app.services.images import ImageGenerator
 from app.store.conversations import ConversationStore
 from app.bot.formatting import escape_markdown_v2, split_message
+from app.core.rate_limit import RateLimiter
 
 logger = logging.getLogger(__name__)
 
@@ -72,11 +74,17 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
 
 async def deep_search_handler(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, llm_client
+    update: Update, context: ContextTypes.DEFAULT_TYPE, llm_client, rate_limiter: RateLimiter
 ) -> None:
     """Handle /deep <query> command."""
     if not update.message or not context.args:
         await update.message.reply_text("Usage: /deep <query>")
+        return
+
+    chat_id = str(update.message.chat_id)
+    if not rate_limiter.is_allowed(chat_id):
+        retry_after = rate_limiter.get_retry_after(chat_id)
+        await update.message.reply_text(f"Rate limited. Try again in {retry_after}s.")
         return
 
     query = " ".join(context.args)
@@ -103,11 +111,17 @@ async def deep_search_handler(
 
 
 async def image_handler(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, image_gen: ImageGenerator
+    update: Update, context: ContextTypes.DEFAULT_TYPE, image_gen: ImageGenerator, rate_limiter: RateLimiter
 ) -> None:
     """Handle /image <prompt> command."""
     if not update.message or not context.args:
         await update.message.reply_text("Usage: /image <prompt>")
+        return
+
+    chat_id = str(update.message.chat_id)
+    if not rate_limiter.is_allowed(chat_id):
+        retry_after = rate_limiter.get_retry_after(chat_id)
+        await update.message.reply_text(f"Rate limited. Try again in {retry_after}s.")
         return
 
     prompt = " ".join(context.args)[:500]

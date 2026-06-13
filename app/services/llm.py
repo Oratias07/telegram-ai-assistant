@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
+import time
 from groq import Groq
+from groq import RateLimitError
 
 
 class LLMClient(ABC):
@@ -25,12 +27,23 @@ class GroqClient(LLMClient):
         self.client = Groq(api_key=api_key)
         self.model = model
 
-    async def complete(self, messages: list[dict]) -> str:
-        """Send messages to Groq and get completion."""
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            max_tokens=1024,
-            temperature=0.7,
-        )
-        return response.choices[0].message.content
+    async def complete(self, messages: list[dict], max_retries: int = 2) -> str:
+        """Send messages to Groq and get completion.
+
+        Retries on rate limit (429) with exponential backoff.
+        """
+        for attempt in range(max_retries + 1):
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    max_tokens=1024,
+                    temperature=0.7,
+                )
+                return response.choices[0].message.content
+            except RateLimitError:
+                if attempt < max_retries:
+                    wait = 2 ** attempt
+                    time.sleep(wait)
+                else:
+                    raise

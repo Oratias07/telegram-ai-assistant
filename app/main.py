@@ -8,6 +8,7 @@ from app.store.conversations import ConversationStore
 from app.services.llm import GroqClient
 from app.services.chat import ChatService
 from app.services.images import PollinationsGenerator
+from app.core.rate_limit import RateLimiter
 from app.bot.handlers import message_handler, reset_handler, search_handler, deep_search_handler, image_handler
 
 logging.basicConfig(
@@ -29,6 +30,7 @@ async def main() -> None:
     store = ConversationStore(db_path=settings.database_path)
     chat_service = ChatService(llm=llm, store=store)
     image_gen = PollinationsGenerator(timeout=30)
+    rate_limiter = RateLimiter(max_requests=3, window_seconds=60)
 
     app = Application.builder().token(settings.telegram_bot_token).build()
 
@@ -37,13 +39,13 @@ async def main() -> None:
     app.add_handler(
         CommandHandler(
             "deep",
-            lambda update, context: deep_search_handler(update, context, llm),
+            lambda update, context: deep_search_handler(update, context, llm, rate_limiter),
         )
     )
     app.add_handler(
         CommandHandler(
             "image",
-            lambda update, context: image_handler(update, context, image_gen),
+            lambda update, context: image_handler(update, context, image_gen, rate_limiter),
         )
     )
     app.add_handler(
