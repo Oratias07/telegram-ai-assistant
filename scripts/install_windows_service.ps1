@@ -67,7 +67,7 @@ Write-Host "Configuring service..." -ForegroundColor Cyan
 & nssm set $ServiceName AppStdout "$LogsDir\service.out.log"
 & nssm set $ServiceName AppStderrCreationDisposition 4
 & nssm set $ServiceName AppStderr "$LogsDir\service.err.log"
-& nssm set $ServiceName RestartDelay 5000
+& nssm set $ServiceName AppRestartDelay 5000
 & nssm set $ServiceName Start SERVICE_AUTO_START
 
 if ($ObjectName) {
