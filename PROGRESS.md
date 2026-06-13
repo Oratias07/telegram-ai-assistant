@@ -97,10 +97,45 @@
 
 ---
 
-## Phase 5 (Ready to start)
-**Hardening + rate limiting + tests + README**
+## Phase 5 ✅ COMPLETE
+- **Date:** 2026-06-13
+- **Status:** All 57 tests passing (DELIVERED)
+- **Built:**
+  - `core/rate_limit.py`: RateLimiter(max_requests=3, window_seconds=60) with per-user tracking, retry_after calculation
+  - `services/llm.py`: Groq 429 error handling with exponential backoff (2 retry attempts, 1s → 2s wait)
+  - `bot/handlers.py`: Rate limiting integrated into `/deep` and `/image` handlers, friendly rate-limit message
+  - `main.py`: Instantiate RateLimiter, pass to expensive handlers
+  - `tests/test_rate_limit.py`: 6 comprehensive tests (limit enforcement, user isolation, window reset, retry_after)
+  - `README.md`: Full production documentation (features, architecture, local setup, deployment, env vars, security, "What I'd do next")
+- **Tests (6 new):**
+  - rate_limit: allows requests, blocks exceeded, per-user isolation, window reset after expiry, retry_after calculation
+- **Production-Ready Features:**
+  - SSRF guard: blocks private/loopback/reserved/multicast IPs via DNS resolution + ipaddress module
+  - Prompt-injection defense: scraped content in `<source>` tags with explicit system instruction to ignore embedded commands
+  - MarkdownV2 escaping: all output properly escaped for Telegram
+  - Message splitting: long responses auto-split over 4096-char limit
+  - Rate limiting: per-user cap (3 req/60s) on expensive operations (/deep, /image)
+  - Groq 429 handling: automatic retry with exponential backoff
+  - Graceful error handling: try/except on all external I/O with user-friendly messages
+  - Async/await: all I/O operations non-blocking
+  - Type hints: throughout codebase
+  - Clean architecture: handlers (thin) → services (logic) → store/core (persistence/security)
+- **Commit:** 0956890
+- **Pushed:** Yes
 
 ---
 
-## Blockers / Notes
-- Phases 0-4 complete. 52 tests passing. Ready for Phase 5 (final hardening + documentation).
+## Summary
+
+**All 5 phases complete.** Bot is production-ready with:
+- ✅ Multi-turn chat with persistent history (SQLite)
+- ✅ Shallow web search (DuckDuckGo)
+- ✅ Deep search with SSRF-safe extraction + LLM synthesis
+- ✅ Image generation (Pollinations)
+- ✅ Rate limiting + error handling + security hardening
+- ✅ 57 comprehensive tests (all mocked I/O)
+- ✅ Full README with deployment guide
+
+**Repository:** [github.com/Oratias07/telegram-ai-assistant](https://github.com/Oratias07/telegram-ai-assistant)
+
+**Ready to:** Deploy to Railway/Fly.io, test with live Telegram users, or extend with additional features from "What I'd do next" section in README.
