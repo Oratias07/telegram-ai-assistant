@@ -83,6 +83,52 @@ Bot will start polling. Send `/start` in Telegram to test.
 pytest tests/ -v
 ```
 
+### Run as Always-On Windows Service
+
+Bot can run as a Windows service that auto-starts and survives reboots/crashes.
+
+#### Method 1: NSSM (Recommended)
+
+**Prerequisites:** Download [NSSM](https://nssm.cc/download), extract, and add to PATH.
+
+**Install (run PowerShell as Administrator):**
+
+```powershell
+cd <repo>
+.\scripts\install_windows_service.ps1
+```
+
+Script will:
+- Install service `telegram-ai-assistant`
+- Auto-start on boot
+- Auto-restart on crash (5s delay)
+- Log to `logs/service.out.log` and `logs/service.err.log`
+
+**Verify running:**
+
+```powershell
+Get-Service telegram-ai-assistant
+Get-Content logs\service.out.log -Tail 20 -Wait
+```
+
+**Uninstall (run PowerShell as Administrator):**
+
+```powershell
+.\scripts\uninstall_windows_service.ps1
+```
+
+#### Method 2: Task Scheduler (No Install)
+
+1. Open Task Scheduler
+2. Create Basic Task:
+   - **Name:** `telegram-ai-assistant`
+   - **Trigger:** At startup
+   - **Action:** Start program: `<repo>\venv\Scripts\python.exe` with args `-m app.main` in `<repo>`
+   - **Advanced:** "Run whether user is logged on or not"
+3. Enable task
+
+**Note:** Bot is live only while the PC is on and online.
+
 ---
 
 ## Environment Variables

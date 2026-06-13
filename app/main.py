@@ -24,10 +24,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def main() -> None:
     settings = load_settings()
-    init_db(settings.database_path)
+    db_path = settings.resolve_database_path()
+    init_db(db_path)
 
     llm = GroqClient(api_key=settings.groq_api_key)
-    store = ConversationStore(db_path=settings.database_path)
+    store = ConversationStore(db_path=db_path)
     chat_service = ChatService(llm=llm, store=store)
     image_gen = PollinationsGenerator(timeout=30)
     rate_limiter = RateLimiter(max_requests=3, window_seconds=60)
