@@ -21,11 +21,11 @@ class ImageGenerator(ABC):
 
 
 class GeminiImagenGenerator(ImageGenerator):
-    """Google Gemini Imagen 3 via REST — returns raw image bytes."""
+    """Gemini 2.0 Flash image generation via REST — returns raw image bytes."""
 
     ENDPOINT = (
         "https://generativelanguage.googleapis.com/v1beta"
-        "/models/imagen-3.0-generate-002:predict"
+        "/models/gemini-2.0-flash-preview-image-generation:generateContent"
     )
 
     def __init__(self, api_key: str, timeout: int = 60):
@@ -36,36 +36,38 @@ class GeminiImagenGenerator(ImageGenerator):
         import base64
         url = f"{self.ENDPOINT}?key={self.api_key}"
         payload = {
-            "instances": [{"prompt": prompt}],
-            "parameters": {"sampleCount": 1, "aspectRatio": "1:1"},
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"responseModalities": ["IMAGE", "TEXT"]},
         }
-        logger.info(f"Gemini Imagen request: model=imagen-3.0-generate-002 prompt={prompt!r}")
+        logger.info(f"Gemini Flash image request: model=gemini-2.0-flash-preview-image-generation prompt={prompt!r}")
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.post(url, json=payload)
                 if response.status_code == 200:
                     data = response.json()
-                    predictions = data.get("predictions") or []
-                    if not predictions:
-                        logger.error(f"Gemini Imagen: empty predictions in response: {data!r}")
+                    candidates = data.get("candidates") or []
+                    if not candidates:
+                        logger.error(f"Gemini Flash: no candidates in response: {data!r}")
                         return b""
-                    b64 = predictions[0].get("bytesBase64Encoded", "")
-                    if not b64:
-                        logger.error(f"Gemini Imagen: missing bytesBase64Encoded in prediction: {predictions[0]!r}")
+                    parts = (candidates[0].get("content") or {}).get("parts") or []
+                    image_part = next((p for p in parts if "inlineData" in p), None)
+                    if not image_part:
+                        logger.error(f"Gemini Flash: no inlineData part found in parts: {parts!r}")
                         return b""
-                    image_bytes = base64.b64decode(b64)
-                    logger.info(f"Gemini Imagen success: {len(image_bytes)} bytes")
+                    inline = image_part["inlineData"]
+                    image_bytes = base64.b64decode(inline["data"])
+                    logger.info(f"Gemini Flash success: {len(image_bytes)} bytes mime={inline.get('mimeType')}")
                     return image_bytes
                 logger.error(
-                    f"Gemini Imagen HTTP {response.status_code} for prompt={prompt!r} "
+                    f"Gemini Flash HTTP {response.status_code} for prompt={prompt!r} "
                     f"body={response.text[:500]!r}"
                 )
                 return b""
         except httpx.TimeoutException as e:
-            logger.error(f"Gemini Imagen timeout after {self.timeout}s for prompt={prompt!r}: {e}", exc_info=True)
+            logger.error(f"Gemini Flash timeout after {self.timeout}s for prompt={prompt!r}: {e}", exc_info=True)
             return b""
         except Exception as e:
-            logger.error(f"Gemini Imagen unexpected error for prompt={prompt!r}: {e}", exc_info=True)
+            logger.error(f"Gemini Flash unexpected error for prompt={prompt!r}: {e}", exc_info=True)
             return b""
 
 
