@@ -71,11 +71,22 @@
 - **Commit:** e972188
 - **Pushed:** Yes
 
-## Phase 4 (Not started)
-**Image generation via Pollinations**
-- `services/images.py`: `ImageGenerator` interface + Pollinations impl (returns URL or bytes)
-- Handler: `/image <prompt>` → send UPLOAD_PHOTO action → generate → reply_photo with error handling
-- Tests: image generation success, provider errors
+## Phase 4 ✅ COMPLETE
+- **Date:** 2026-06-13
+- **Status:** All 52 tests passing
+- **Built:**
+  - `services/images.py`: `ImageGenerator` interface + `PollinationsGenerator` (timeout=30s, max_redirects=3, returns image URL)
+  - `bot/handlers.py`: `image_handler(/image <prompt>)` - send UPLOAD_PHOTO action, generate, reply_photo with prompt caption (escaped)
+  - Updated `main.py` to instantiate PollinationsGenerator and register `/image` command
+- **Tests (3 new):**
+  - interface: abstract ImageGenerator cannot be instantiated
+  - instantiation: PollinationsGenerator setup
+  - subclass: ImageGenerator implementation check
+- **Key implementation:**
+  - Pollinations URL: `https://image.pollinations.ai/prompt/{prompt}` (follows redirects to final image)
+  - Handler: graceful error handling, escape caption for MarkdownV2, truncate prompt to 500 chars for generation, 1024 for caption
+- **Commit:** b54bcd0
+- **Pushed:** Yes
 
 ## Phase 5 (Not started)
 **Hardening + rate limiting + README**
@@ -86,5 +97,10 @@
 
 ---
 
+## Phase 5 (Ready to start)
+**Hardening + rate limiting + tests + README**
+
+---
+
 ## Blockers / Notes
-- None. Phase 1 complete. Ready for Phase 2 approval.
+- Phases 0-4 complete. 52 tests passing. Ready for Phase 5 (final hardening + documentation).
