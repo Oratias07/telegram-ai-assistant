@@ -2,7 +2,7 @@
 
 A multi-capability Telegram bot that provides chat, web search, deep search with synthesis, and image generation—all powered by Groq's fast inference.
 
-**Live bot:** [@orai_assistant_bot](https://t.me/orai_assistant_bot) (pending deployment)
+**Live bot:** [@orai_assistant_bot](https://t.me/orai_assistant_bot)
 
 ---
 
