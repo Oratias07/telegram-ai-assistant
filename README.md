@@ -24,7 +24,7 @@ A multi-capability Telegram bot that provides chat, web search, deep search with
 1. **Chat** — Multi-turn conversation with context history (last 12 turns), persisted across restarts.
 2. **Shallow Search** (`/search`) — Quick DuckDuckGo results in a numbered list.
 3. **Deep Search** (`/deep`) — Fetch top 4 results, extract content, synthesize an answer with citations.
-4. **Image Generation** (`/image`) — Generate images via Pollinations.ai.
+4. **Image Generation** (`/image`) — Generate images via Gemini / Pollinations.ai. Image generation uses free-tier providers; availability depends on provider quotas. As a next step, a paid provider (Replicate, Together.ai) would ensure reliable generation.
 5. **Rate Limiting** — 3 requests per 60s on expensive ops (deep search, image generation).
 6. **Security** — SSRF guards, prompt-injection defense via source wrapping, MarkdownV2 escaping, input sanitization.
 
@@ -212,6 +212,7 @@ docker run -e TELEGRAM_BOT_TOKEN=... -e GROQ_API_KEY=... telegram-ai-bot
 5. **Analytics Dashboard** — Track query volumes, latency, error rates (Grafana + Prometheus).
 6. **Webhook Instead of Polling** — Reduces resource usage on production (Railway/Fly).
 7. **Multi-LLM Support** — Swap Groq for Gemini/OpenAI without code changes (interface already supports it).
+8. **Reliable Image Generation** — Integrate a paid provider (Replicate FLUX or Together.ai) — current free-tier options have quota/IP limitations that make /image unreliable.
 
 ---
 

@@ -131,8 +131,12 @@ async def image_handler(
         image_url = await image_gen.generate(prompt)
 
         if not image_url:
-            logger.error(f"Image generation returned empty result for prompt={prompt!r}")
-            await update.message.reply_text("Image generation failed. Try again.")
+            provider = getattr(image_gen, "name", "image provider")
+            logger.error(f"Image generation returned empty result for prompt={prompt!r} provider={provider}")
+            await update.message.reply_text(
+                f"⚠️ Image generation is temporarily unavailable due to provider limitations.\n"
+                f"The /image command uses {provider} — please try again later."
+            )
             return
 
         caption = escape_markdown_v2(prompt[:1024])
@@ -142,5 +146,9 @@ async def image_handler(
             await update.message.reply_photo(photo=image_url, caption=caption)
 
     except Exception as e:
-        logger.error(f"Error in image generation: {e}", exc_info=True)
-        await update.message.reply_text("Image generation failed. Try again.")
+        provider = getattr(image_gen, "name", "image provider")
+        logger.error(f"Error in image generation provider={provider}: {e}", exc_info=True)
+        await update.message.reply_text(
+            f"⚠️ Image generation is temporarily unavailable due to provider limitations.\n"
+            f"The /image command uses {provider} — please try again later."
+        )

@@ -27,6 +27,7 @@ class GeminiImagenGenerator(ImageGenerator):
         "https://generativelanguage.googleapis.com/v1beta"
         "/models/gemini-2.5-flash-image:generateContent"
     )
+    name = "Gemini 2.5 Flash"
 
     def __init__(self, api_key: str, timeout: int = 60):
         self.api_key = api_key
@@ -74,6 +75,8 @@ class GeminiImagenGenerator(ImageGenerator):
 class PollinationsGenerator(ImageGenerator):
     """Pollinations.ai image generation — returns a URL."""
 
+    name = "Pollinations.ai"
+
     def __init__(self, timeout: int = 45):
         self.timeout = timeout
         self.base_url = "https://image.pollinations.ai"
@@ -110,6 +113,7 @@ class FallbackImageGenerator(ImageGenerator):
     def __init__(self, primary: ImageGenerator, fallback: ImageGenerator):
         self.primary = primary
         self.fallback = fallback
+        self.name = f"{primary.name} / {fallback.name}"
 
     async def generate(self, prompt: str) -> bytes | str:
         result = await self.primary.generate(prompt)
