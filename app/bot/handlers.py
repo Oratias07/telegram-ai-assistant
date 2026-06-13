@@ -100,3 +100,28 @@ async def deep_search_handler(
     except Exception as e:
         logger.error(f"Error in deep search: {e}", exc_info=True)
         await update.message.reply_text("Search failed. Try again.")
+
+
+async def image_handler(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, image_gen: ImageGenerator
+) -> None:
+    """Handle /image <prompt> command."""
+    if not update.message or not context.args:
+        await update.message.reply_text("Usage: /image <prompt>")
+        return
+
+    prompt = " ".join(context.args)[:500]
+
+    try:
+        await update.message.chat.send_action(ChatAction.UPLOAD_PHOTO)
+        image_url = await image_gen.generate(prompt)
+
+        if not image_url:
+            await update.message.reply_text("Image generation failed. Try again.")
+            return
+
+        await update.message.reply_photo(photo=image_url, caption=escape_markdown_v2(prompt[:1024]))
+
+    except Exception as e:
+        logger.error(f"Error in image generation: {e}", exc_info=True)
+        await update.message.reply_text("Image generation failed. Try again.")

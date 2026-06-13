@@ -7,7 +7,8 @@ from app.store.db import init_db
 from app.store.conversations import ConversationStore
 from app.services.llm import GroqClient
 from app.services.chat import ChatService
-from app.bot.handlers import message_handler, reset_handler, search_handler, deep_search_handler
+from app.services.images import PollinationsGenerator
+from app.bot.handlers import message_handler, reset_handler, search_handler, deep_search_handler, image_handler
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -27,6 +28,7 @@ async def main() -> None:
     llm = GroqClient(api_key=settings.groq_api_key)
     store = ConversationStore(db_path=settings.database_path)
     chat_service = ChatService(llm=llm, store=store)
+    image_gen = PollinationsGenerator(timeout=30)
 
     app = Application.builder().token(settings.telegram_bot_token).build()
 
@@ -36,6 +38,12 @@ async def main() -> None:
         CommandHandler(
             "deep",
             lambda update, context: deep_search_handler(update, context, llm),
+        )
+    )
+    app.add_handler(
+        CommandHandler(
+            "image",
+            lambda update, context: image_handler(update, context, image_gen),
         )
     )
     app.add_handler(
