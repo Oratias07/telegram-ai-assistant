@@ -50,13 +50,26 @@
 - **Commit:** cb55953
 - **Pushed:** Yes
 
-## Phase 3 (Not started)
-**Deep search: SSRF-safe fetch + trafilatura extraction + LLM synthesis**
-- `core/security.py`: `is_safe_url()` — block private/loopback/reserved IPs, enforce timeout/redirects/response size
-- `services/extract.py`: async fetch + trafilatura, SSRF-guarded
-- `services/deep_search.py`: search(k=6) → top 4 URLs → concurrent fetch+extract → LLM synthesis with `<source>` tags → answer + cited sources
-- Handler: `/deep <q>` → send "searching…" → fetch+extract → EDIT message with result
-- Tests: extract success/fallback/error, synthesis prompt building, no-sources/all-fail paths, SSRF guard blocking private IPs
+## Phase 3 ✅ COMPLETE
+- **Date:** 2026-06-13
+- **Status:** All 49 tests passing
+- **Built:**
+  - `core/security.py`: `is_safe_url()` (blocks private/loopback/reserved/multicast IPs), `sanitize_input()` (null-byte removal + truncation)
+  - `services/extract.py`: `fetch_and_extract(url, timeout=10, max_size=5MB)` - SSRF-guarded httpx async fetch + trafilatura extraction
+  - `services/deep_search.py`: `deep_search(query, llm) → DeepResult` - shallow(k=6) → top 4 URLs → `asyncio.gather()` fetch+extract concurrently → fallback snippets if extraction fails → LLM synthesis with `<source id=N>` wrapping → cited answer + sources list
+  - `bot/handlers.py`: `deep_search_handler(/deep <q>)` - send "🔎 Searching…", run pipeline, EDIT original message with result + sources
+  - Updated `main.py` to register `/deep` command
+- **Tests (28 new):**
+  - security (10): valid/invalid URLs, schemes, localhost/127, private IPs (10.x, 192.168.x), metadata IP (169.254.169.254), input sanitization
+  - deep_search (8): no results, no extracted content (fallback snippets), successful extraction+synthesis, top 4 URLs, synthesis prompt building
+- **Key implementation:**
+  - SSRF check: DNS resolve + ipaddress module, blocks private/loopback/link-local/reserved/multicast
+  - Extract: 10s timeout, 5MB size limit, 5 redirect max, fallback to snippet if trafilatura returns None
+  - Deep search: concurrent fetch with `asyncio.gather(return_exceptions=True)`, truncate each doc to 2500 chars
+  - Synthesis prompt: system instruction to ignore instructions in source tags (prompt-injection defense), user message wraps sources in `<source id=N url="...">content</source>`
+  - Handler: send status message, run async pipeline, edit status with final result
+- **Commit:** e972188
+- **Pushed:** Yes
 
 ## Phase 4 (Not started)
 **Image generation via Pollinations**
