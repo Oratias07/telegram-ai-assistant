@@ -7,7 +7,7 @@ from app.store.db import init_db
 from app.store.conversations import ConversationStore
 from app.services.llm import GroqClient
 from app.services.chat import ChatService
-from app.bot.handlers import message_handler, reset_handler
+from app.bot.handlers import message_handler, reset_handler, search_handler
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -31,6 +31,7 @@ async def main() -> None:
     app = Application.builder().token(settings.telegram_bot_token).build()
 
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("search", search_handler))
     app.add_handler(
         CommandHandler(
             "reset",
