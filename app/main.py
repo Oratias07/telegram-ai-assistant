@@ -1,8 +1,13 @@
 import logging
 from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
 from app.config import load_settings
+from app.store.db import init_db
+from app.store.conversations import ConversationStore
+from app.services.llm import GroqClient
+from app.services.chat import ChatService
+from app.bot.handlers import message_handler, reset_handler
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -17,9 +22,27 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def main() -> None:
     settings = load_settings()
+    init_db(settings.database_path)
+
+    llm = GroqClient(api_key=settings.groq_api_key)
+    store = ConversationStore(db_path=settings.database_path)
+    chat_service = ChatService(llm=llm, store=store)
+
     app = Application.builder().token(settings.telegram_bot_token).build()
 
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(
+        CommandHandler(
+            "reset",
+            lambda update, context: reset_handler(update, context, store),
+        )
+    )
+    app.add_handler(
+        MessageHandler(
+            filters.TEXT & ~filters.COMMAND,
+            lambda update, context: message_handler(update, context, chat_service),
+        )
+    )
 
     async with app:
         await app.start()
@@ -30,4 +53,5 @@ async def main() -> None:
 
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main())
