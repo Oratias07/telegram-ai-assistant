@@ -6,12 +6,25 @@ A multi-capability Telegram bot that provides chat, web search, deep search with
 
 ---
 
+## Commands
+
+| Command | Description |
+|---|---|
+| `/start` | Welcome message and usage guide |
+| `/search <query>` | Quick DuckDuckGo results in a numbered list |
+| `/deep <query>` | Fetch top 4 results, extract content, synthesize answer with citations |
+| `/image <prompt>` | Generate image via Pollinations.ai |
+| `/reset` | Clear conversation history for the current user |
+| _(plain text)_ | Multi-turn chat with Groq LLM |
+
+---
+
 ## Features
 
 1. **Chat** — Multi-turn conversation with context history (last 12 turns), persisted across restarts.
-2. **Shallow Search** (`/search <query>`) — Quick DuckDuckGo results in a numbered list.
-3. **Deep Search** (`/deep <query>`) — Fetch top 4 results, extract content, synthesize an answer with citations.
-4. **Image Generation** (`/image <prompt>`) — Generate images via Pollinations.ai.
+2. **Shallow Search** (`/search`) — Quick DuckDuckGo results in a numbered list.
+3. **Deep Search** (`/deep`) — Fetch top 4 results, extract content, synthesize an answer with citations.
+4. **Image Generation** (`/image`) — Generate images via Pollinations.ai.
 5. **Rate Limiting** — 3 requests per 60s on expensive ops (deep search, image generation).
 6. **Security** — SSRF guards, prompt-injection defense via source wrapping, MarkdownV2 escaping, input sanitization.
 
@@ -83,68 +96,6 @@ Bot will start polling. Send `/start` in Telegram to test.
 pytest tests/ -v
 ```
 
-### Run as Always-On Windows Service
-
-Bot can run as a Windows service that auto-starts and survives reboots/crashes.
-
-#### Method 1: NSSM (Recommended)
-
-**Prerequisites:** Download [NSSM](https://nssm.cc/download), extract, and add to PATH.
-
-**Install (run PowerShell as Administrator):**
-
-```powershell
-cd <repo>
-.\scripts\install_windows_service.ps1
-```
-
-Script will:
-- Install service `telegram-ai-assistant`
-- Auto-start on boot
-- Auto-restart on crash (5s delay)
-- Log to `logs/service.out.log` and `logs/service.err.log`
-
-**Verify running:**
-
-```powershell
-Get-Service telegram-ai-assistant
-Get-Content logs\service.out.log -Tail 20 -Wait
-```
-
-**Uninstall (run PowerShell as Administrator):**
-
-```powershell
-.\scripts\uninstall_windows_service.ps1
-```
-
-**Keep service running 24/7 — disable sleep/hibernate:**
-
-Without this, your PC will sleep and the bot will stop polling. Run as Administrator:
-
-```powershell
-powercfg /change standby-timeout-ac 0
-powercfg /change hibernate-timeout-ac 0
-```
-
-To re-enable sleep later:
-
-```powershell
-powercfg /change standby-timeout-ac 10
-powercfg /change hibernate-timeout-ac 10
-```
-
-#### Method 2: Task Scheduler (No Install)
-
-1. Open Task Scheduler
-2. Create Basic Task:
-   - **Name:** `telegram-ai-assistant`
-   - **Trigger:** At startup
-   - **Action:** Start program: `<repo>\venv\Scripts\python.exe` with args `-m app.main` in `<repo>`
-   - **Advanced:** "Run whether user is logged on or not"
-3. Enable task
-
-**Note:** Bot is live only while the PC is on and online.
-
 ---
 
 ## Environment Variables
@@ -159,14 +110,69 @@ powercfg /change hibernate-timeout-ac 10
 
 ## Deployment
 
-### Railway / Fly.io (Recommended — Always-On)
+### Self-Hosted Windows Service via NSSM (Recommended for local always-on)
+
+Bot runs as a Windows service that auto-starts on boot and auto-restarts on crash.
+
+**Prerequisites:** Download [NSSM](https://nssm.cc/download), extract, add to PATH.
+
+**Install (run PowerShell as Administrator):**
+
+```powershell
+cd <repo>
+.\scripts\install_windows_service.ps1
+```
+
+Script does:
+- Installs service `telegram-ai-assistant`
+- Auto-start on boot
+- Auto-restart on crash (5s delay)
+- Logs to `logs/service.out.log` and `logs/service.err.log`
+
+**Verify running:**
+
+```powershell
+Get-Service telegram-ai-assistant
+Get-Content logs\service.out.log -Tail 20 -Wait
+```
+
+**Uninstall (run PowerShell as Administrator):**
+
+```powershell
+.\scripts\uninstall_windows_service.ps1
+```
+
+**Keep bot alive 24/7 — disable sleep/hibernate (run as Administrator):**
+
+```powershell
+powercfg /change standby-timeout-ac 0
+powercfg /change hibernate-timeout-ac 0
+```
+
+To re-enable sleep:
+
+```powershell
+powercfg /change standby-timeout-ac 10
+powercfg /change hibernate-timeout-ac 10
+```
+
+**Alternative — Task Scheduler (no install required):**
+
+1. Open Task Scheduler → Create Basic Task
+2. Trigger: At startup
+3. Action: `<repo>\venv\Scripts\python.exe` with args `-m app.main`, start in `<repo>`
+4. Advanced: "Run whether user is logged on or not"
+
+---
+
+### Railway / Fly.io (Cloud Always-On)
 
 1. Push repo to GitHub
 2. Connect GitHub repo to Railway/Fly
 3. Set env vars in dashboard
 4. Deploy
 
-**Important:** Avoid Render free tier — it sleeps after 15 minutes.
+**Note:** Avoid Render free tier — sleeps after 15 minutes of inactivity.
 
 ### Docker
 
