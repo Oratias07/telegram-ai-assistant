@@ -131,6 +131,7 @@ async def image_handler(
         image_url = await image_gen.generate(prompt)
 
         if not image_url:
+            logger.error(f"Image generation returned empty URL for prompt={prompt!r}")
             await update.message.reply_text("Image generation failed. Try again.")
             return
 
