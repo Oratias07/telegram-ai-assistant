@@ -32,11 +32,23 @@
 
 ---
 
-## Phase 2 (Ready to start)
-**Shallow web search via ddgs**
-- Implement: `services/search.py` with `shallow(query, k=5) -> list[Result(title, url, snippet)]` using ddgs
-- Handler: `/search <q>` → send TYPING action → return formatted numbered list with links
-- Tests: ddgs parsing, empty results, error handling
+## Phase 2 ✅ COMPLETE
+- **Date:** 2026-06-13
+- **Status:** All 31 tests passing
+- **Built:**
+  - `services/search.py`: `shallow(query, k=5)` using DDGS → list[Result(title, url, snippet)]
+  - `bot/formatting.py`: `escape_markdown_v2()` (special char escaping), `split_message()` (4096 char limit)
+  - `bot/handlers.py`: `search_handler(/search <q>)` → TYPING action → numbered markdown list
+  - Updated `main.py` to register `/search` command
+- **Tests (11 new):**
+  - search: returns results, handles empty results, error handling, respects k parameter
+  - formatting: escape special chars, split long messages, handle edge cases
+- **Key implementation:**
+  - DDGS with 10-second timeout, returns empty list on error (graceful fallback)
+  - MarkdownV2 escape for title/URL, split output if > 4096 chars
+  - No synthesis yet — just search results in formatted list
+- **Commit:** cb55953
+- **Pushed:** Yes
 
 ## Phase 3 (Not started)
 **Deep search: SSRF-safe fetch + trafilatura extraction + LLM synthesis**
