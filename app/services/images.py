@@ -20,45 +20,52 @@ class ImageGenerator(ABC):
         pass
 
 
-class HuggingFaceGenerator(ImageGenerator):
-    """Hugging Face Inference API — returns raw image bytes."""
+class GeminiImagenGenerator(ImageGenerator):
+    """Google Gemini Imagen 3 via REST — returns raw image bytes."""
 
-    ENDPOINT = "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell"
+    ENDPOINT = (
+        "https://generativelanguage.googleapis.com/v1beta"
+        "/models/imagen-3.0-generate-002:predict"
+    )
 
-    def __init__(self, token: str, timeout: int = 60):
-        self.token = token
+    def __init__(self, api_key: str, timeout: int = 60):
+        self.api_key = api_key
         self.timeout = timeout
 
     async def generate(self, prompt: str) -> bytes:
-        logger.info(f"HuggingFace request: model=FLUX.1-schnell prompt={prompt!r}")
-        headers = {"Authorization": f"Bearer {self.token}"}
+        import base64
+        url = f"{self.ENDPOINT}?key={self.api_key}"
+        payload = {
+            "instances": [{"prompt": prompt}],
+            "parameters": {"sampleCount": 1, "aspectRatio": "1:1"},
+        }
+        logger.info(f"Gemini Imagen request: model=imagen-3.0-generate-002 prompt={prompt!r}")
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.post(
-                    self.ENDPOINT,
-                    headers=headers,
-                    json={"inputs": prompt},
-                )
+                response = await client.post(url, json=payload)
                 if response.status_code == 200:
-                    content_type = response.headers.get("content-type", "")
-                    if "image" in content_type:
-                        logger.info(f"HuggingFace success: {len(response.content)} bytes, content-type={content_type}")
-                        return response.content
-                    logger.error(
-                        f"HuggingFace 200 but unexpected content-type={content_type!r} "
-                        f"body={response.text[:200]!r}"
-                    )
-                    return b""
+                    data = response.json()
+                    predictions = data.get("predictions") or []
+                    if not predictions:
+                        logger.error(f"Gemini Imagen: empty predictions in response: {data!r}")
+                        return b""
+                    b64 = predictions[0].get("bytesBase64Encoded", "")
+                    if not b64:
+                        logger.error(f"Gemini Imagen: missing bytesBase64Encoded in prediction: {predictions[0]!r}")
+                        return b""
+                    image_bytes = base64.b64decode(b64)
+                    logger.info(f"Gemini Imagen success: {len(image_bytes)} bytes")
+                    return image_bytes
                 logger.error(
-                    f"HuggingFace HTTP {response.status_code} for prompt={prompt!r} "
+                    f"Gemini Imagen HTTP {response.status_code} for prompt={prompt!r} "
                     f"body={response.text[:500]!r}"
                 )
                 return b""
         except httpx.TimeoutException as e:
-            logger.error(f"HuggingFace timeout after {self.timeout}s for prompt={prompt!r}: {e}", exc_info=True)
+            logger.error(f"Gemini Imagen timeout after {self.timeout}s for prompt={prompt!r}: {e}", exc_info=True)
             return b""
         except Exception as e:
-            logger.error(f"HuggingFace unexpected error for prompt={prompt!r}: {e}", exc_info=True)
+            logger.error(f"Gemini Imagen unexpected error for prompt={prompt!r}: {e}", exc_info=True)
             return b""
 
 

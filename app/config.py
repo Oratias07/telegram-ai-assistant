@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     groq_api_key: str
     database_path: str = "./bot.db"
     hf_token: str = ""
+    gemini_api_key: str = ""
 
     def resolve_database_path(self) -> str:
         """Resolve database path to absolute, handling service mode."""
