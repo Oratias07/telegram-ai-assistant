@@ -7,7 +7,7 @@ from app.store.db import init_db
 from app.store.conversations import ConversationStore
 from app.services.llm import GroqClient
 from app.services.chat import ChatService
-from app.services.images import PollinationsGenerator
+from app.services.images import HuggingFaceGenerator, PollinationsGenerator, FallbackImageGenerator
 from app.core.rate_limit import RateLimiter
 from app.bot.handlers import message_handler, reset_handler, search_handler, deep_search_handler, image_handler
 
@@ -30,7 +30,16 @@ async def main() -> None:
     llm = GroqClient(api_key=settings.groq_api_key)
     store = ConversationStore(db_path=db_path)
     chat_service = ChatService(llm=llm, store=store)
-    image_gen = PollinationsGenerator(timeout=30)
+    pollinations = PollinationsGenerator(timeout=45)
+    if settings.hf_token:
+        logger.info("HuggingFace token present — using HF as primary, Pollinations as fallback")
+        image_gen = FallbackImageGenerator(
+            primary=HuggingFaceGenerator(token=settings.hf_token),
+            fallback=pollinations,
+        )
+    else:
+        logger.warning("HF_TOKEN not set — using Pollinations only (may hit 402)")
+        image_gen = pollinations
     rate_limiter = RateLimiter(max_requests=3, window_seconds=60)
 
     app = Application.builder().token(settings.telegram_bot_token).build()

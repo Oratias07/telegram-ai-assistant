@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     telegram_bot_token: str
     groq_api_key: str
     database_path: str = "./bot.db"
+    hf_token: str = ""
 
     def resolve_database_path(self) -> str:
         """Resolve database path to absolute, handling service mode."""

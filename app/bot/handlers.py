@@ -131,11 +131,15 @@ async def image_handler(
         image_url = await image_gen.generate(prompt)
 
         if not image_url:
-            logger.error(f"Image generation returned empty URL for prompt={prompt!r}")
+            logger.error(f"Image generation returned empty result for prompt={prompt!r}")
             await update.message.reply_text("Image generation failed. Try again.")
             return
 
-        await update.message.reply_photo(photo=image_url, caption=escape_markdown_v2(prompt[:1024]))
+        caption = escape_markdown_v2(prompt[:1024])
+        if isinstance(image_url, bytes):
+            await update.message.reply_photo(photo=image_url, caption=caption)
+        else:
+            await update.message.reply_photo(photo=image_url, caption=caption)
 
     except Exception as e:
         logger.error(f"Error in image generation: {e}", exc_info=True)
