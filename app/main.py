@@ -7,7 +7,7 @@ from app.store.db import init_db
 from app.store.conversations import ConversationStore
 from app.services.llm import GroqClient
 from app.services.chat import ChatService
-from app.bot.handlers import message_handler, reset_handler, search_handler
+from app.bot.handlers import message_handler, reset_handler, search_handler, deep_search_handler
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -32,6 +32,12 @@ async def main() -> None:
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("search", search_handler))
+    app.add_handler(
+        CommandHandler(
+            "deep",
+            lambda update, context: deep_search_handler(update, context, llm),
+        )
+    )
     app.add_handler(
         CommandHandler(
             "reset",

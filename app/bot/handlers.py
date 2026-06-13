@@ -5,6 +5,7 @@ from telegram.ext import ContextTypes
 
 from app.services.chat import ChatService
 from app.services import search as search_service
+from app.services import deep_search as deep_search_service
 from app.store.conversations import ConversationStore
 from app.bot.formatting import escape_markdown_v2, split_message
 
@@ -67,4 +68,35 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     except Exception as e:
         logger.error(f"Error in search: {e}", exc_info=True)
+        await update.message.reply_text("Search failed. Try again.")
+
+
+async def deep_search_handler(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, llm_client
+) -> None:
+    """Handle /deep <query> command."""
+    if not update.message or not context.args:
+        await update.message.reply_text("Usage: /deep <query>")
+        return
+
+    query = " ".join(context.args)
+
+    try:
+        status_msg = await update.message.reply_text("🔎 Searching and synthesizing...")
+        result = await deep_search_service.deep_search(query, llm_client)
+
+        lines = [escape_markdown_v2(result.answer)]
+        lines.append("\n\n*Sources:*")
+        for i, source in enumerate(result.sources, 1):
+            title = escape_markdown_v2(source.title[:50])
+            url = escape_markdown_v2(source.url)
+            lines.append(f"{i}\\. [{title}]({url})")
+
+        reply = "\n".join(lines)
+        for chunk in split_message(reply):
+            await status_msg.edit_text(chunk, parse_mode="MarkdownV2")
+            status_msg = await update.message.reply_text(chunk, parse_mode="MarkdownV2")
+
+    except Exception as e:
+        logger.error(f"Error in deep search: {e}", exc_info=True)
         await update.message.reply_text("Search failed. Try again.")
