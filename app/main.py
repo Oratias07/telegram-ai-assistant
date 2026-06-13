@@ -65,8 +65,12 @@ async def main() -> None:
     async with app:
         await app.start()
         logger.info("Bot started (polling)")
-        await app.updater.start_polling()
-        await app.idle()
+        try:
+            await app.updater.start_polling()
+            while True:
+                await asyncio.sleep(1)
+        except KeyboardInterrupt:
+            logger.info("Bot stopping...")
 
 
 if __name__ == "__main__":

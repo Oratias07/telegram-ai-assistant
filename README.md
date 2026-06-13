@@ -117,6 +117,22 @@ Get-Content logs\service.out.log -Tail 20 -Wait
 .\scripts\uninstall_windows_service.ps1
 ```
 
+**Keep service running 24/7 — disable sleep/hibernate:**
+
+Without this, your PC will sleep and the bot will stop polling. Run as Administrator:
+
+```powershell
+powercfg /change standby-timeout-ac 0
+powercfg /change hibernate-timeout-ac 0
+```
+
+To re-enable sleep later:
+
+```powershell
+powercfg /change standby-timeout-ac 10
+powercfg /change hibernate-timeout-ac 10
+```
+
 #### Method 2: Task Scheduler (No Install)
 
 1. Open Task Scheduler

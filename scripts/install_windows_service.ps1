@@ -3,7 +3,8 @@
 
 param(
     [string]$ServiceName = "telegram-ai-assistant",
-    [string]$RepoRoot = (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
+    [string]$RepoRoot = (Split-Path -Parent $PSScriptRoot),
+    [string]$ObjectName = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -69,6 +70,11 @@ Write-Host "Configuring service..." -ForegroundColor Cyan
 & nssm set $ServiceName RestartDelay 5000
 & nssm set $ServiceName Start SERVICE_AUTO_START
 
+if ($ObjectName) {
+    Write-Host "Setting service account to: $ObjectName" -ForegroundColor Cyan
+    & nssm set $ServiceName ObjectName "$ObjectName"
+}
+
 Write-Host "✓ Service configured" -ForegroundColor Green
 
 # Start service
@@ -91,6 +97,19 @@ if ($Service -and $Service.Status -eq "Running") {
     Write-Host ""
     Write-Host "To view logs:" -ForegroundColor Yellow
     Write-Host "  Get-Content $LogsDir\service.out.log -Tail 20 -Wait"
+    Write-Host ""
+    if (-not $ObjectName) {
+        Write-Host "To run as your logged-in user account (RECOMMENDED):" -ForegroundColor Yellow
+        Write-Host "  Run as Administrator in PowerShell:" -ForegroundColor Cyan
+        Write-Host "  nssm set $ServiceName ObjectName `"<DOMAIN>\<USERNAME>`" `"<PASSWORD>`""
+        Write-Host ""
+        Write-Host "  Where:" -ForegroundColor Cyan
+        Write-Host "    <DOMAIN>\<USERNAME> = your Windows account (e.g., 'LAPTOP\atias' or just 'atias' for local account)"
+        Write-Host "    <PASSWORD> = your Windows account password"
+        Write-Host ""
+        Write-Host "  Then restart the service:" -ForegroundColor Cyan
+        Write-Host "  nssm restart $ServiceName"
+    }
 } else {
     Write-Host "ERROR: Service failed to start. Check logs in $LogsDir" -ForegroundColor Red
     exit 1
